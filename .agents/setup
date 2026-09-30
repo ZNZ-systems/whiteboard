@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+code_oss="$repo_root/apps/review-desktop/code-oss"
+node_version="$(tr -d '[:space:]' < "$code_oss/.nvmrc")"
+pnpm_spec="$(sed -n 's/.*"packageManager": "\(pnpm@[^"]*\)".*/\1/p' "$repo_root/package.json")"
+pnpm_version="${pnpm_spec#pnpm@}"
+nvm_version="v0.40.3"
+required_packages=(
+  build-essential
+  ca-certificates
+  curl
+  git
+  libkrb5-dev
+  libsecret-1-dev
+  libx11-dev
+  libxkbfile-dev
+  python3
+)
+
+echo "==> Installing missing system packages"
+missing_packages=()
+for package in "${required_packages[@]}"; do
+  if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -Fq "install ok installed"; then
+    missing_packages+=("$package")
+  fi
+done
+if ((${#missing_packages[@]})); then
+  sudo apt-get update
+  sudo apt-get install -y --no-install-recommends "${missing_packages[@]}"
+else
+  echo "System packages are current."
+fi
+
+echo "==> Installing Node.js $node_version"
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+  git clone --depth 1 --branch "$nvm_version" https://github.com/nvm-sh/nvm.git "$NVM_DIR"
+fi
+# shellcheck disable=SC1091
+source "$NVM_DIR/nvm.sh" --no-use
+nvm install "$node_version"
+nvm alias default "$node_version" >/dev/null
+nvm use "$node_version" >/dev/null
+
+profile_marker="# Whiteboard orb Node.js toolchain"
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >> "$HOME/.bash_profile" <<'EOF'
+
+# Whiteboard orb Node.js toolchain
+export NVM_DIR="$HOME/.nvm"
+if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+  # nvm selects the repository's .nvmrc automatically when the shell starts there.
+  source "$NVM_DIR/nvm.sh"
+fi
+EOF
+fi
+
+echo "==> Installing pnpm $pnpm_version"
+if ! command -v pnpm >/dev/null 2>&1 || [[ "$(pnpm --version 2>/dev/null || true)" != "$pnpm_version" ]]; then
+  npm install --global "pnpm@$pnpm_version"
+fi
+
+cd "$repo_root"
+echo "==> Installing workspace dependencies"
+time pnpm install --frozen-lockfile
+
+playwright_version="$(node -p "require('$repo_root/packages/review/app/package.json').devDependencies.playwright")"
+playwright_marker="$HOME/.cache/ms-playwright/.whiteboard-system-deps-$playwright_version"
+if [[ ! -f "$playwright_marker" ]]; then
+  echo "==> Installing Playwright Chromium system dependencies"
+  pnpm --filter @dev.fast/review-canvas exec playwright install-deps chromium
+  mkdir -p "$(dirname "$playwright_marker")"
+  touch "$playwright_marker"
+fi
+
+echo "==> Installing Playwright Chromium"
+time pnpm --filter @dev.fast/review-canvas exec playwright install chromium --only-shell
+
+echo "==> Installing Code OSS dependencies"
+# shellcheck source=/dev/null
+source "$repo_root/apps/review-desktop/scripts/code-oss-dependencies.sh"
+time ensure_code_oss_dependencies "$repo_root/apps/review-desktop" "$code_oss"
+
+echo "==> Orb setup complete"

@@ -70,6 +70,7 @@ packages/review/**/__traces__/
 backups/
 .e2e-shots/
 .playwright-cli/
+.amp/portals/*
 
 
 # eval run outputs
