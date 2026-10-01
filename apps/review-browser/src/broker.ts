@@ -60,12 +60,24 @@ export function senderIssue(
     sender.tab?.id === undefined ||
     !sender.url ||
     !sender.tab.url ||
+    (sender.documentLifecycle && sender.documentLifecycle !== "active") ||
     (sender.origin && sender.origin !== "https://linear.app")
   )
     return null;
-  const issue = canonicalIssue(sender.url);
+  const issue = canonicalIssue(sender.tab.url);
 
-  return issue && canonicalIssue(sender.tab.url) === issue ? issue : null;
+  if (!issue) return null;
+
+  if (canonicalIssue(sender.url) === issue) return issue;
+
+  try {
+    return sender.documentLifecycle === "active" &&
+      new URL(sender.url).origin === "https://linear.app"
+      ? issue
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 const savedSnapshotSchema = z

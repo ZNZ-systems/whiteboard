@@ -295,8 +295,9 @@ try {
     )
       errors.push(message.text());
   });
-  await issue.goto(
-    "https://linear.app/whiteboard-test/issue/ENG-42/bounded-retries",
+  await issue.goto("https://linear.app/login");
+  await issue.evaluate(() =>
+    history.pushState({}, "", "/whiteboard-test/issue/ENG-42/bounded-retries"),
   );
   const options = await context.newPage();
   await options.goto(`chrome-extension://${extensionId}/options.html`);
@@ -428,6 +429,17 @@ try {
     .getByText("Bounded retry delivery", { exact: true })
     .first()
     .waitFor({ state: "hidden" });
+  await issue
+    .getByRole("button", { name: "Open Whiteboard", exact: true })
+    .click();
+  await issue
+    .getByText("Choose a saved review for this issue", { exact: true })
+    .waitFor();
+  await issue.goBack();
+  await issue
+    .getByRole("button", { name: "Open Whiteboard", exact: true })
+    .click();
+  await issue.getByText("Updated review evidence.", { exact: true }).waitFor();
   await capturePause();
   assert.deepEqual(
     directRequests,

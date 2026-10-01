@@ -186,6 +186,61 @@ describe("sender and per-issue authorization", () => {
     expect(test.request).not.toHaveBeenCalled();
   });
 
+  it.each([
+    "https://linear.app/auth/google/callback",
+    "https://linear.app/acme/issue/ENG-11",
+    "https://linear.app/other/issue/OTHER-1",
+  ])(
+    "authorizes the active issue after SPA navigation from %s",
+    async (url) => {
+      const test = harness();
+
+      const sender: chrome.runtime.MessageSender = {
+        ...content,
+        url,
+        documentLifecycle: "active",
+      };
+
+      expect(
+        await test.handle({ type: "review:status", issueUrl }, sender),
+      ).toEqual({ ok: true, value: { connected: true, binding } });
+      expect(await test.handle(fileRequest, sender)).toMatchObject({
+        ok: true,
+        value: { body: JSON.stringify({ text: "saved file content" }) },
+      });
+      test.request.mockClear();
+      test.tabUrl = "https://linear.app/acme/issue/ENG-13";
+      expect(await test.handle(fileRequest, sender)).toBeUndefined();
+      expect(test.request).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["cached", "prerender", "pending_deletion"] as const)(
+    "does not authorize a %s document even on the same issue",
+    async (documentLifecycle) => {
+      const test = harness();
+      expect(
+        await test.handle(fileRequest, { ...content, documentLifecycle }),
+      ).toBeUndefined();
+      expect(test.request).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["https://evil.test/", "not a URL"])(
+    "does not trust active-document metadata from %s",
+    async (url) => {
+      const test = harness();
+      expect(
+        await test.handle(fileRequest, {
+          ...content,
+          url,
+          documentLifecycle: "active",
+        }),
+      ).toBeUndefined();
+      expect(test.request).not.toHaveBeenCalled();
+    },
+  );
+
   it.each(["options:status", "options:catalog", "options:disconnect"])(
     "keeps privileged operation %s inaccessible to content",
     async (type) => {
