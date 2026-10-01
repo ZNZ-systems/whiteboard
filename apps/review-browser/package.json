@@ -1,0 +1,31 @@
+{
+  "name": "@dev.fast/review-browser",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "prebuild": "pnpm --filter @dev.fast/review build:workspace-deps",
+    "build": "tsx build.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:e2e": "tsx tests/extension.e2e.ts"
+  },
+  "dependencies": {
+    "@dev.fast/json": "workspace:*",
+    "@dev.fast/review-canvas": "workspace:*",
+    "@dev.fast/review-protocol": "workspace:*",
+    "@mr_mint/elkjs-libavoid": "0.5.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.1.37",
+    "@types/node": "24.12.2",
+    "esbuild": "0.28.1",
+    "playwright": "1.62.1",
+    "tsx": "4.21.0",
+    "typescript": "6.0.3",
+    "vite": "8.0.16",
+    "vitest": "4.1.11"
+  }
+}

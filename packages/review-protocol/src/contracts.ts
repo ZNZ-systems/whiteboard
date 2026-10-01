@@ -93,7 +93,7 @@ export const ReviewRuntimeConfigSchema = z.strictObject({
   wasmUrl: absoluteUrlSchema,
   appVersion: requiredString.max(100),
   theme: reviewThemeSchema,
-  host: z.literal("desktop"),
+  host: z.enum(["desktop", "browser"]),
 });
 
 export type ReviewRuntimeConfig = z.infer<typeof ReviewRuntimeConfigSchema>;
@@ -641,6 +641,7 @@ export type ReviewCanvasContent =
       softwareMapEnabled?: boolean;
       reviewId: string;
       version?: number;
+      live?: boolean;
       bridge: ReviewCanvasBridge;
       setTitle?(title: string): void;
       setSourceView?(

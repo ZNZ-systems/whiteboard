@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Whiteboard for Linear",
+  "version": "0.1.0",
+  "description": "Read an explicitly selected local Whiteboard saved review alongside a Linear issue.",
+  "minimum_chrome_version": "140",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1/*", "https://linear.app/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Connect Whiteboard and choose a saved review" },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "content_scripts": [
+    {
+      "matches": ["https://linear.app/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["assets/*"], "matches": ["https://linear.app/*"] }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'"
+  }
+}

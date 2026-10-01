@@ -145,11 +145,11 @@ export function ApiCanvas({
     };
 
     void (async () => {
-      if (version !== undefined) {
+      if (version !== undefined || content.live === false) {
         try {
           await show(
             await client.read(
-              `/${content.reviewId}?full=true&version=${version}`,
+              `/${content.reviewId}?full=true${version === undefined ? "" : `&version=${version}`}`,
               abort.signal,
             ),
           );
@@ -157,6 +157,8 @@ export function ApiCanvas({
           if (!abort.signal.aborted) setError(message(cause));
         }
       }
+
+      if (content.live === false) return;
 
       let shownVersion: string | undefined;
       await client.follow<
@@ -238,7 +240,7 @@ export function ApiCanvas({
       abort.abort();
       loader.dispose();
     };
-  }, [client, content.reviewId, version]);
+  }, [client, content.reviewId, content.live, version]);
 
   const nativeSources = useMemo(
     () => ({
@@ -253,7 +255,7 @@ export function ApiCanvas({
       ...content.bridge,
       ...nativeSources,
       post: async (request: Parameters<ApiContent["bridge"]["post"]>[0]) => {
-        if (request.name === "openReviewRevision") {
+        if (request.name === "openReviewRevision" && content.live !== false) {
           setVersion(
             request.args.revision === undefined
               ? undefined
@@ -279,7 +281,7 @@ export function ApiCanvas({
         ?.pinnedData;
 
     return session;
-  }, [content.bridge, content.reviewId, nativeSources]);
+  }, [content.bridge, content.reviewId, content.live, nativeSources]);
 
   const session = useMemo(() => {
     if (!data) return baseSession;
@@ -324,7 +326,10 @@ export function ApiCanvas({
 
   // Only the latest version of a review this machine owns takes edits.
   const editable =
-    version === undefined && data !== undefined && !data.snapshot.shared;
+    content.live !== false &&
+    version === undefined &&
+    data !== undefined &&
+    !data.snapshot.shared;
 
   const saveMarkdown = useMemo(
     () =>
@@ -379,7 +384,7 @@ export function ApiCanvas({
             <p {...stylex.props(styles.error)} role="status">
               {error}
             </p>
-            {version !== undefined && (
+            {version !== undefined && content.live !== false && (
               <button onClick={() => setVersion(undefined)}>
                 Back to latest version
               </button>

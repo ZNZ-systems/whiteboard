@@ -1,5 +1,6 @@
 import type { CoverageProgress } from "@review/viewed-coverage";
 
+import { useOptionalReviewSession } from "./host/review-session";
 import { useTooltip } from "./use-tooltip";
 
 /**
@@ -19,15 +20,19 @@ export function ViewedButton({
   /** What the box marks, e.g. the lens title. */
   label: string;
 }) {
+  const session = useOptionalReviewSession();
+  const readOnly = session?.config.host === "browser";
   const done = progress.state === "viewed";
   const empty = progress.total.additions + progress.total.deletions === 0;
 
   const tooltip = useTooltip(
-    done
-      ? "Click to mark as unviewed"
-      : progress.state === "partial"
-        ? "Click to mark all as viewed"
-        : "Click to mark as viewed",
+    readOnly
+      ? "Viewed status is read-only in saved browser reviews"
+      : done
+        ? "Click to mark as unviewed"
+        : progress.state === "partial"
+          ? "Click to mark all as viewed"
+          : "Click to mark as viewed",
     { instant: true },
   );
 
@@ -38,8 +43,12 @@ export function ViewedButton({
       className={`review-viewed-check ${empty ? "is-empty" : ""}`}
       role="checkbox"
       aria-checked={progress.state === "partial" ? "mixed" : done}
-      aria-label={`${done ? "Mark unviewed" : "Mark viewed"}: ${label}`}
-      disabled={disabled || empty}
+      aria-label={
+        readOnly
+          ? `Read-only viewed status: ${label}`
+          : `${done ? "Mark unviewed" : "Mark viewed"}: ${label}`
+      }
+      disabled={readOnly || disabled || empty}
       onClick={onClick}
     />
   );

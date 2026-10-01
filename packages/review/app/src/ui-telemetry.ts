@@ -11,7 +11,7 @@ type UiTelemetryProperties = Record<string, UiTelemetryPropertyValue>;
 let appOpenedSent = false;
 
 export function captureAppOpened(session: ReviewSession): void {
-  if (appOpenedSent) return;
+  if (session.config.host === "browser" || appOpenedSent) return;
   appOpenedSent = true;
   captureUiEvent(session, "app_opened");
 }
@@ -22,6 +22,7 @@ export function captureUiEvent(
   properties?: UiTelemetryProperties,
   error?: PackedClientError,
 ): void {
+  if (session.config.host === "browser") return;
   const sanitizedProperties = sanitizeEventProperties(name, properties);
 
   if (!sanitizedProperties) return;

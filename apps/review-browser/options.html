@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Whiteboard for Linear — settings</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font:
+          15px/1.6 system-ui,
+          sans-serif;
+        color: #ececf2;
+        background: #15161b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        max-width: 820px;
+        margin: 48px auto;
+        padding: 0 24px 64px;
+      }
+      h1 {
+        font-size: 28px;
+        letter-spacing: -0.6px;
+        margin-bottom: 8px;
+      }
+      h2 {
+        font-size: 19px;
+        margin: 0 0 12px;
+      }
+      p {
+        margin: 8px 0 16px;
+      }
+      .muted,
+      small {
+        color: #b1b4c7;
+      }
+      section {
+        margin: 24px 0;
+        background: #202129;
+        border: 1px solid #383b48;
+        border-radius: 12px;
+        padding: 24px;
+      }
+      code {
+        display: block;
+        background: #13141a;
+        padding: 12px 16px;
+        margin: 16px 0;
+        border-radius: 8px;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 16px 0 6px;
+      }
+      input,
+      select,
+      button {
+        font: inherit;
+        color: inherit;
+        border: 1px solid #505468;
+        border-radius: 7px;
+        padding: 9px 12px;
+        background: #292c38;
+      }
+      input[type="url"],
+      select {
+        width: 100%;
+      }
+      input[type="file"] {
+        max-width: 100%;
+      }
+      button {
+        cursor: pointer;
+        margin: 8px 6px 0 0;
+      }
+      button.primary {
+        background: #474e96;
+        border-color: #848bdb;
+      }
+      button:disabled {
+        cursor: default;
+        opacity: 0.45;
+      }
+      button:hover:not(:disabled) {
+        background: #404760;
+      }
+      input:focus-visible,
+      select:focus-visible,
+      button:focus-visible {
+        outline: 2px solid #aab0ff;
+        outline-offset: 3px;
+      }
+      #status {
+        min-height: 26px;
+        color: #bac4ff;
+        overflow-wrap: anywhere;
+      }
+      #connection-state {
+        font-weight: 600;
+      }
+      #bindings {
+        padding-left: 20px;
+        overflow-wrap: anywhere;
+      }
+      #bindings li {
+        margin: 14px 0;
+      }
+      #bindings button {
+        font-size: 12px;
+        margin-left: 8px;
+        padding: 4px 8px;
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #aab0ff;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="eyebrow">Local reviews · explicit sharing</div>
+    <h1>Whiteboard for Linear</h1>
+    <p class="muted">
+      Keep Linear in view while reading a real, saved Whiteboard review. This
+      extension requests data only from your local server. Selected review
+      content is rendered in the Linear page, whose scripts can inspect it.
+    </p>
+    <div id="status" role="status" aria-live="polite"></div>
+    <section>
+      <h2>1. Connect your local Whiteboard</h2>
+      <p>
+        Install the Whiteboard CLI, then start its authenticated loopback
+        server:
+      </p>
+      <code>whiteboard server start</code>
+      <p>
+        Import <strong>&lt;stateDir&gt;/review-server/server.json</strong> from
+        the state directory used by the server. Start the server again and
+        reimport if the connection expires.
+      </p>
+      <p id="connection-state">Checking connection…</p>
+      <label for="discovery">Server discovery file</label>
+      <input id="discovery" type="file" accept="application/json,.json" />
+      <button id="disconnect" type="button">
+        Disconnect and clear bindings
+      </button>
+      <p>
+        <small
+          >The credential stays in trusted extension storage on this browser. It
+          is not synced, displayed, or exposed to Linear or the page’s content
+          script. Importing a new connection clears existing bindings.</small
+        >
+      </p>
+    </section>
+    <section>
+      <h2>2. Choose an issue and saved review</h2>
+      <label for="issue-tab">Open Linear issues</label>
+      <select id="issue-tab">
+        <option value="">Choose an open Linear issue…</option>
+      </select>
+      <button id="reload-tabs" type="button">Reload open issues</button>
+      <label for="issue-url">Linear issue URL</label>
+      <input
+        id="issue-url"
+        type="url"
+        placeholder="https://linear.app/workspace/issue/ENG-123/title"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <label for="review">Local saved review</label>
+      <select id="review" disabled>
+        <option value="">Connect Whiteboard first</option>
+      </select>
+      <button id="reload-reviews" type="button" disabled>
+        Reload saved reviews
+      </button>
+      <p id="selection" class="muted">
+        Select one review to explicitly allow it on this issue.
+      </p>
+      <button id="bind" class="primary" type="button" disabled>
+        Bind saved review to issue
+      </button>
+      <p>
+        <small
+          >The page can read only its bound review and saved version. Refresh in
+          the panel advances to the latest saved version of that same review;
+          selecting a different review requires these settings.</small
+        >
+      </p>
+    </section>
+    <section>
+      <h2>Issue bindings</h2>
+      <ul id="bindings"></ul>
+      <p class="muted">
+        Return to the Linear issue and select <strong>Open Whiteboard</strong>.
+        Closing the panel or navigating to another issue removes the current
+        review canvas.
+      </p>
+    </section>
+    <script src="options.js"></script>
+  </body>
+</html>

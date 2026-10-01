@@ -21,6 +21,7 @@ export function reviewTelemetryTab(view: ReviewView): ReviewTelemetryTab {
 export function useReviewTabTelemetry(activeView: ReviewView): void {
   const session = useReviewSession();
   const appSessionId = session.appSessionId;
+  const browser = session.config.host === "browser";
   const trackerRef = useRef<ReviewTabDwellTracker | null>(null);
   const telemetryTab = reviewTelemetryTab(activeView);
   const captureOpened = useEffectEvent(() => captureAppOpened(session));
@@ -28,6 +29,7 @@ export function useReviewTabTelemetry(activeView: ReviewView): void {
   const send = useEffectEvent<
     Parameters<typeof createReviewTabDwellTracker>[0]["send"]
   >((payload, options) => {
+    if (browser) return;
     createReviewTabTelemetryTransport({
       endpoint: session.beaconUrl("/telemetry/tab"),
       navigator: window.navigator,
@@ -36,6 +38,7 @@ export function useReviewTabTelemetry(activeView: ReviewView): void {
   });
 
   useEffect(() => {
+    if (browser) return;
     captureOpened();
 
     const tracker = createReviewTabDwellTracker({
@@ -65,7 +68,7 @@ export function useReviewTabTelemetry(activeView: ReviewView): void {
       tracker.unmount();
       trackerRef.current = null;
     };
-  }, [appSessionId]);
+  }, [appSessionId, browser]);
 
   useEffect(() => {
     trackerRef.current?.setActiveTab(telemetryTab);

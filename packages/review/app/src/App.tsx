@@ -356,6 +356,7 @@ function ReviewLayoutContent({
 }): ReactElement {
   const session = useReviewSession();
   const review = useReview();
+  const browser = session.config.host === "browser";
   // The scratchpad is a document and nothing else: no source tree to browse,
   // nothing to share, nothing to dismiss.
   const scratchpad = session.review?.kind === "scratchpad";
@@ -632,7 +633,7 @@ function ReviewLayoutContent({
                   shellStyles.topbarContext,
                 )}
               >
-                {!scratchpad && (
+                {!scratchpad && !browser && (
                   <Button
                     variant="ghost"
                     xstyle={shellStyles.openSourceTree}
@@ -668,25 +669,30 @@ function ReviewLayoutContent({
                   }}
                 />
               </div>
-              <ReviewStackSelector />
-              <ShareControl />
-              <IconButton
-                xstyle={shellStyles.topbarItem}
-                ref={discordTooltip}
-                aria-label="Join our Discord community"
-                onClick={() => {
-                  captureUiEvent(session, "discord_clicked", {
-                    via: "topbar",
-                  });
-                  session.surface.post({ name: "joinDiscord", args: {} });
-                }}
-              >
-                <DiscordIcon xstyle={controlStyles.chromeIcon} />
-              </IconButton>
-              <BugReportControl />
+              {!browser && (
+                <>
+                  <ReviewStackSelector />
+                  <ShareControl />
+                  <IconButton
+                    xstyle={shellStyles.topbarItem}
+                    ref={discordTooltip}
+                    aria-label="Join our Discord community"
+                    onClick={() => {
+                      captureUiEvent(session, "discord_clicked", {
+                        via: "topbar",
+                      });
+                      session.surface.post({ name: "joinDiscord", args: {} });
+                    }}
+                  >
+                    <DiscordIcon xstyle={controlStyles.chromeIcon} />
+                  </IconButton>
+                  <BugReportControl />
+                </>
+              )}
               <ReviewBatonChip outcome={review.submissionOutcome} />
-              <DiffLayoutControl />
-              {!scratchpad &&
+              {!browser && <DiffLayoutControl />}
+              {!browser &&
+                !scratchpad &&
                 !review.historicalRevision &&
                 !review.submissionOutcome && (
                   <div
@@ -696,7 +702,8 @@ function ReviewLayoutContent({
                     )}
                   />
                 )}
-              {!scratchpad &&
+              {!browser &&
+              !scratchpad &&
               !review.historicalRevision &&
               !review.submissionOutcome ? (
                 <ReviewCornerAction />
@@ -705,17 +712,23 @@ function ReviewLayoutContent({
           </header>
           {review.historicalRevision ? (
             <div {...stylex.props(shellStyles.historyBanner)} role="status">
-              <span>You are viewing an older version of this session.</span>
-              <Button
-                onClick={() =>
-                  void session.surface.post({
-                    name: "openReviewRevision",
-                    args: {},
-                  })
-                }
-              >
-                Back to latest
-              </Button>
+              <span>
+                {browser
+                  ? `Saved version ${review.historicalRevision} · Read-only`
+                  : "You are viewing an older version of this session."}
+              </span>
+              {!browser && (
+                <Button
+                  onClick={() =>
+                    void session.surface.post({
+                      name: "openReviewRevision",
+                      args: {},
+                    })
+                  }
+                >
+                  Back to latest
+                </Button>
+              )}
             </div>
           ) : null}
           {activeView === "review" && documentState.state === "ready" && (
