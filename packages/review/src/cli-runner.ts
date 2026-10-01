@@ -609,6 +609,43 @@ export async function runReviewCli(input: ReviewCliInput): Promise<number> {
     });
   });
 
+  const linear = configureOutput(
+    program.command("linear").description("Publish reviews to Linear issues"),
+    "plain",
+  );
+
+  configureJsonOutput(
+    linear
+      .command("attach")
+      .description("Create or update a rich attachment on a Linear issue")
+      .requiredOption("--review <id>", "saved Whiteboard review ID")
+      .requiredOption("--issue <identifier>", "Linear issue identifier or UUID")
+      .requiredOption("--url <url>", "HTTPS link to this review version")
+      .option("--version <number>", "saved version to attach (default: latest)")
+      .option(
+        "--dry-run",
+        "print the attachment JSON without contacting Linear",
+      ),
+    "plain",
+  ).action(
+    async (options: {
+      review: string;
+      issue: string;
+      url: string;
+      version?: string;
+      dryRun?: boolean;
+      json?: boolean;
+    }) => {
+      const { runLinearAttachCli } = await import("./linear/cli.js");
+      state.exitCode = await runLinearAttachCli({
+        ...input,
+        ...options,
+        json: options.json || program.opts<{ json?: boolean }>().json,
+        env: authoringEnv(),
+      });
+    },
+  );
+
   const share = configureJsonOutput(
     program
       .command("share")
